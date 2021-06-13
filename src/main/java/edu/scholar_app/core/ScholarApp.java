@@ -1,136 +1,205 @@
 package edu.scholar_app.core;
 
+import edu.scholar_app.domain.Student;
+import edu.scholar_app.domain.Teacher;
+import edu.scholar_app.domain.User;
+import edu.scholar_app.exception.IncompleteNameException;
+import edu.scholar_app.exception.NegativeValueException;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ScholarApp {
 
-    private static String[] names;
-    private static float[] av1Grades;
-    private static float[] av2Grades;
+    private static User[] users;
     private static int index;
     private static final int LEN = 100;
 
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
 
-        names = new String[LEN];
-        av1Grades = new float[LEN];
-        av2Grades = new float[LEN];
+        users = new User[LEN];
 
         String option;
 
         do {
             System.out.println();
             System.out.println("[1] Register a student report card");
-            System.out.println("[2] Consult a student report card");
-            System.out.println("[3] View all student's report cards");
-            System.out.println("[4] Exit");
+            System.out.println("[2] Register a teacher report card");
+            System.out.println("[3] Consult the status of a student/teacher");
+            System.out.println("[4] View all report cards");
+            System.out.println("[5] Exit");
 
             System.out.print("\nEnter the desired option: ");
             option = in.next();
 
             switch (option) {
                 case "1":
-                    if (index < LEN) {
-                        System.out.print("Enter the student's name: ");
-                        names[index] = in.next();
+                    try {
+                        if (index < LEN) {
+                            Student student = new Student();
+                            student.setId(index);
 
-                        System.out.print("Enter the AV1 grade: ");
-                        av1Grades[index] = in.nextFloat();
+                            try {
+                                inputName(student, in);
+                            } catch (IncompleteNameException e) {
+                                System.out.println(e.getMessage());
+                                break;
+                            }
 
-                        System.out.print("Enter the AV2 grade: ");
-                        av2Grades[index] = in.nextFloat();
+                            System.out.print("Enter the AV1 grade: ");
+                            student.setAv1Grade(in.nextFloat());
 
-                        System.out.println("\nStudent successfully registered in the position " + index);
+                            System.out.print("Enter the AV2 grade: ");
+                            student.setAv2Grade(in.nextFloat());
 
-                        index++;
-                    } else {
-                        System.out.println("There is no more vacancy for registration!");
+                            users[index] = student;
+
+                            System.out.println("\nStudent successfully registered in the position " + users[index]);
+
+                            index++;
+                        } else {
+                            System.out.println("There is no more vacancy for registration!");
+                        }
+                    } finally {
+                        System.out.println("Returning to the menu...");
                     }
                     break;
 
                 case "2":
-                    System.out.print("Enter the position: ");
-                    int pos = in.nextInt();
+                    try {
+                        if (index < LEN) {
+                            Teacher teacher = new Teacher();
+                            teacher.setId(index);
 
-                    if (pos >= 0 && pos < index) {
-                        print(pos);
-                    } else {
-                        System.out.println("Invalid position!");
+                            try {
+                                inputName(teacher, in);
+                            } catch (IncompleteNameException e) {
+                                System.out.println(e.getMessage());
+                                break;
+                            }
+
+                            System.out.print("Enter the teacher's subject: ");
+                            teacher.setSubject(in.next());
+
+                            System.out.print("Enter the teaching experience: ");
+                            teacher.setExperience(in.nextInt());
+
+                            try {
+                                System.out.print("Enter the salary amount: ");
+                                teacher.setSalary(in.nextDouble());
+                            } catch (NegativeValueException e) {
+                                System.out.println(e.getMessage());
+                                break;
+                            }
+
+                            users[index] = teacher;
+
+                            System.out.println("\nTeacher successfully registered in the position " + users[index]);
+
+                            index++;
+                        } else {
+                            System.out.println("There is no more vacancy for registration!");
+                        }
+                    } finally {
+                        System.out.println("Returning to the menu...");
                     }
                     break;
 
                 case "3":
-                    if (index != 0) {
-                        print();
-                    } else {
-                        System.out.println("No registered students!");
+                    try {
+                        System.out.print("Enter the position: ");
+                        int pos = in.nextInt();
+
+                        if (pos >= 0 && pos < index) {
+                            users[pos].print();
+                        } else {
+                            System.out.println("Invalid position!");
+                        }
+                    } finally {
+                        System.out.println("Returning to the menu...");
                     }
                     break;
 
                 case "4":
+                    try {
+                        if (index != 0) {
+                            print();
+                        } else {
+                            System.out.println("No registered users!");
+                        }
+                    } finally {
+                        System.out.println("Returning to the menu...");
+                    }
+                    break;
+
+                case "5":
                     System.out.println("Shutting down...");
                     break;
 
                 default:
-                    System.out.println("Invalid option!");
+                    try {
+                        System.out.println("Invalid option!");
+                    } finally {
+                        System.out.println("Returning to the menu...");
+                    }
                     break;
             }
 
-        } while (!option.equals("4"));
+        } while (!option.equals("5"));
 
-        sendReport();
         in.close();
     }
 
+    private static void inputName(User user, Scanner in) throws IncompleteNameException {
+
+        System.out.print("Enter the first name: ");
+        user.setFirstName(in.next().trim());
+
+        System.out.print("Enter the last name: ");
+        user.setLastName(in.next().trim());
+
+        String regex = "^[a-zA-Z]+$";
+        Pattern pattern = Pattern.compile(regex);
+
+        Matcher matcherFirstName = pattern.matcher(user.getFirstName());
+        Matcher matcherLastName = pattern.matcher(user.getLastName());
+
+        if (!matcherFirstName.matches() || !matcherLastName.matches()) {
+            throw new IncompleteNameException("Invalid name");
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(user.getFirstName().toUpperCase().charAt(0)).append(user.getFirstName().substring(1));
+        sb.append(" ");
+        sb.append(user.getLastName().toUpperCase().charAt(0)).append(user.getLastName().substring(1));
+
+        user.setName(sb.toString());
+    }
+
     private static void print() {
-        System.out.println("Student's list:\n");
-        for (int i = 0; i < index; i++) {
-            print(i);
-        }
-    }
 
-    private static void print(int idx) {
-        float averageGrade = getAverage(idx);
-        System.out.printf("[%d] %s - AV1(%.2f) + AV2(%.2f) = Average(%.2f) - Status (%s)\n",
-                idx + 1,
-                names[idx],
-                av1Grades[idx],
-                av2Grades[idx],
-                averageGrade,
-                getStatus(averageGrade)
-        );
-    }
-
-    private static float getAverage(int idx) {
-        return (av1Grades[idx] + av2Grades[idx]) / 2;
-    }
-
-    private static String getStatus(float finalGrade) {
-        if (finalGrade >= 7) {
-            return "Approved";
-        } else if (finalGrade < 4) {
-            return "Disapproved";
-        } else {
-            return "Final Test";
-        }
-    }
-
-    private static float getAverageGrades() {
-        float sum = 0;
+        List<Student> studentList = new ArrayList<>();
+        List<Teacher> teacherList = new ArrayList<>();
 
         for (int i = 0; i < index; i++) {
-            sum = sum + getAverage(i);
+            if (users[i] instanceof Student) {
+                studentList.add((Student) users[i]);
+            } else if (users[i] instanceof Teacher) {
+                teacherList.add((Teacher) users[i]);
+            }
         }
 
-        return sum / index;
-    }
+        System.out.println("Student's list:");
+        studentList.forEach(Student::print);
 
-    private static void sendReport() {
-        int amount = index;
+        System.out.println(" ");
 
-        System.out.println("Reporting status...");
-        System.out.println("Number of students: " + amount);
-        System.out.printf("Average student grades: %.2f", getAverageGrades());
+        System.out.println("Teacher's list:");
+        teacherList.forEach(Teacher::print);
     }
 }
